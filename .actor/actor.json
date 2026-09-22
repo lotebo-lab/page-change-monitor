@@ -1,0 +1,30 @@
+{
+    "actorSpecification": 1,
+    "name": "page-change-monitor",
+    "title": "Website Change Monitor: Track Page Updates",
+    "description": "Give it a list of URLs, each with an optional CSS selector. On every run it fetches the pages, compares the watched part with what it saw on the previous run, and returns one row per URL saying whether that part changed, with the old and the new text next to each other.",
+    "version": "0.1",
+    "buildTag": "latest",
+    "dockerfile": "../Dockerfile",
+    "input": "./input_schema.json",
+    "storages": {
+        "dataset": "./dataset_schema.json"
+    },
+    "output": "./output_schema.json",
+    "minMemoryMbytes": 256,
+    "defaultMemoryMbytes": 512,
+    "pay_per_event": {
+        "actorChargeEvents": {
+            "page-checked": {
+                "eventTitle": "Page checked",
+                "eventDescription": "One URL fetched and fingerprinted. Charged only when the page was read and the selector matched; a failed fetch is not charged.",
+                "eventPriceUsd": 0.05
+            },
+            "change-detected": {
+                "eventTitle": "Change detected",
+                "eventDescription": "Charged when the watched part of a page no longer matches the fingerprint stored by the previous run, on top of that page's check. A first check, and a page that still matches, pay nothing for this event.",
+                "eventPriceUsd": 0.02
+            }
+        }
+    }
+}

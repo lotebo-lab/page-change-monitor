@@ -1,0 +1,19 @@
+{
+    "actorOutputSchemaVersion": 1,
+    "title": "Page Change Monitor output",
+    "description": "One row per URL checked, saying whether the watched part changed since the previous run, plus a run summary.",
+    "properties": {
+        "results": {
+            "type": "string",
+            "title": "Checked pages",
+            "description": "One item per URL: the selector used, whether it changed, the text before and after, the fingerprint, the HTTP status and the error when there is one.",
+            "template": "{{links.apiDefaultDatasetUrl}}/items"
+        },
+        "summary": {
+            "type": "string",
+            "title": "Run summary",
+            "description": "URLs requested, URLs read, changes detected, first checks, errors and how many events were charged.",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/SUMMARY"
+        }
+    }
+}

@@ -1,0 +1,47 @@
+{
+    "title": "Page Change Monitor input",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "urls": {
+            "title": "Pages to watch",
+            "type": "array",
+            "description": "The pages to check. Each entry is an object with url (required) and selector (optional CSS selector, for example \"#changelog\" or \"main .status\"). With a selector, only that part of the page is watched and the rest is ignored. Without a selector, the whole page body is watched, which is noisier. A plain string is also accepted and means the whole page. Each entry that is read counts as one charged page check.",
+            "editor": "json",
+            "prefill": [
+                { "url": "https://en.wikipedia.org/wiki/Main_Page", "selector": "#mp-tfa" }
+            ]
+        },
+        "requestDelaySeconds": {
+            "title": "Delay between requests",
+            "type": "integer",
+            "description": "Seconds to wait before each request after the first one. Keep it at 1 or more to stay polite. If the site's robots.txt asks for a longer Crawl-delay, the longer value is used.",
+            "editor": "number",
+            "default": 2,
+            "minimum": 0,
+            "maximum": 60,
+            "unit": "seconds"
+        },
+        "requestTimeoutSeconds": {
+            "title": "Request timeout",
+            "type": "integer",
+            "description": "Seconds to wait for a response before the URL is reported as a timeout. A URL that times out is not charged and its stored fingerprint is left untouched.",
+            "editor": "number",
+            "default": 20,
+            "minimum": 3,
+            "maximum": 120,
+            "unit": "seconds"
+        },
+        "excerptChars": {
+            "title": "Excerpt length",
+            "type": "integer",
+            "description": "How many characters of the watched text are kept in previous_excerpt and current_excerpt, so you can see what changed without opening the page. Set 0 to store no text at all.",
+            "editor": "number",
+            "default": 200,
+            "minimum": 0,
+            "maximum": 5000,
+            "unit": "characters"
+        }
+    },
+    "required": ["urls"]
+}

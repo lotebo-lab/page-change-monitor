@@ -1,0 +1,142 @@
+{
+    "actorSpecification": 1,
+    "fields": {
+        "type": "object",
+        "properties": {
+            "url": {
+                "type": "string",
+                "title": "URL",
+                "description": "The page that was checked, as given in the input.",
+                "example": "https://example.com/changelog"
+            },
+            "selector": {
+                "type": ["string", "null"],
+                "title": "CSS selector",
+                "description": "The selector that narrowed the check, or null when the whole page body was watched.",
+                "example": "#changelog"
+            },
+            "changed": {
+                "type": "boolean",
+                "title": "Changed",
+                "description": "True when the watched part differs from the previous run. False on the first check of a URL, because there is nothing to compare against yet.",
+                "example": true
+            },
+            "first_check": {
+                "type": "boolean",
+                "title": "First check",
+                "description": "True when this run is the first time this URL and selector were seen, so no comparison was possible.",
+                "example": false
+            },
+            "previous_excerpt": {
+                "type": "string",
+                "title": "Previous text",
+                "description": "The text of the watched part as the previous run saw it, trimmed to the excerpt length. Empty on a first check.",
+                "example": "Version 2.3.0 released"
+            },
+            "current_excerpt": {
+                "type": "string",
+                "title": "Current text",
+                "description": "The text of the watched part in this run, trimmed to the excerpt length.",
+                "example": "Version 2.4.0 released"
+            },
+            "fingerprint": {
+                "type": "string",
+                "title": "Fingerprint",
+                "description": "sha256 of the normalized watched part, the value that gets compared on the next run. Empty when the page could not be read.",
+                "example": "sha256:9f2c4b1e0d..."
+            },
+            "checked_at": {
+                "type": "string",
+                "title": "Checked at",
+                "description": "UTC timestamp of this check, ISO 8601.",
+                "example": "2026-09-20T03:10:00+00:00"
+            },
+            "status": {
+                "type": ["integer", "null"],
+                "title": "HTTP status",
+                "description": "HTTP status of the response, or null when there was no response.",
+                "example": 200
+            },
+            "error": {
+                "type": ["string", "null"],
+                "title": "Error",
+                "description": "Why this URL could not be checked, or null when it was checked. Reasons include a timeout, an HTTP error, a selector that matched nothing and a path disallowed by the site's robots.txt.",
+                "example": null
+            }
+        }
+    },
+    "views": {
+        "overview": {
+            "title": "All fields",
+            "transformation": {
+                "fields": [
+                    "url",
+                    "selector",
+                    "changed",
+                    "first_check",
+                    "previous_excerpt",
+                    "current_excerpt",
+                    "fingerprint",
+                    "checked_at",
+                    "status",
+                    "error"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "url": { "label": "URL", "format": "link" },
+                    "selector": { "label": "Selector", "format": "text" },
+                    "changed": { "label": "Changed", "format": "boolean" },
+                    "first_check": { "label": "First check", "format": "boolean" },
+                    "previous_excerpt": { "label": "Before", "format": "text" },
+                    "current_excerpt": { "label": "Now", "format": "text" },
+                    "fingerprint": { "label": "Fingerprint", "format": "text" },
+                    "checked_at": { "label": "Checked at", "format": "date" },
+                    "status": { "label": "Status", "format": "number" },
+                    "error": { "label": "Error", "format": "text" }
+                }
+            }
+        },
+        "changes": {
+            "title": "What changed",
+            "transformation": {
+                "fields": [
+                    "url",
+                    "selector",
+                    "changed",
+                    "previous_excerpt",
+                    "current_excerpt",
+                    "checked_at"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "url": { "label": "URL", "format": "link" },
+                    "selector": { "label": "Selector", "format": "text" },
+                    "changed": { "label": "Changed", "format": "boolean" },
+                    "previous_excerpt": { "label": "Before", "format": "text" },
+                    "current_excerpt": { "label": "Now", "format": "text" },
+                    "checked_at": { "label": "Checked at", "format": "date" }
+                }
+            }
+        },
+        "problems": {
+            "title": "Not checked",
+            "transformation": {
+                "fields": ["url", "selector", "status", "error", "checked_at"]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "url": { "label": "URL", "format": "link" },
+                    "selector": { "label": "Selector", "format": "text" },
+                    "status": { "label": "Status", "format": "number" },
+                    "error": { "label": "Error", "format": "text" },
+                    "checked_at": { "label": "Checked at", "format": "date" }
+                }
+            }
+        }
+    }
+}
