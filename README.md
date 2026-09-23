@@ -1,12 +1,31 @@
 # Website Change Monitor: Watch One CSS Selector, Not the Whole Page
-
+The pages you depend on (a supplier price block, a clause in a terms of service, a status page with no feed) change without telling you.
 **Run it on the Apify Store: https://apify.com/lotebo-lab/page-change-monitor**
-
-A handful of pages you depend on change without telling you: a supplier price block, a clause in a terms of service, a changelog or a status page that publishes no feed. Today somebody opens the same five pages every Monday and tries to remember what they looked like last week.
 
 Give this Actor a list of URLs, each with an optional CSS selector. Every run fetches the pages, compares the watched part with what it stored on the previous run, and returns one row per URL saying whether that part changed, with the old text and the new text side by side.
 
 This repository holds the source code. The Actor runs on the Apify platform, so there is nothing to install and nothing to host.
+
+## Quick start
+
+1. Open https://apify.com/lotebo-lab/page-change-monitor and switch the input to JSON.
+2. Paste this input, which is valid against [`.actor/input_schema.json`](.actor/input_schema.json), and start the run:
+
+```json
+{
+  "urls": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Main_Page",
+      "selector": "#mp-tfa"
+    }
+  ],
+  "requestDelaySeconds": 2,
+  "requestTimeoutSeconds": 20,
+  "excerptChars": 200
+}
+```
+
+Price, as read from the public Apify Store API (`currentPricingInfo`) on 2026-09-23 16:25 UTC: US$ 0.05 per `page-checked` event (one URL read with its selector matched) plus US$ 0.02 per `change-detected` event, only when the watched part changed. Apify charges the platform usage of the run on top; that part is set by the platform, not by this Actor. The full table is under "Price".
 
 ## Use cases
 
@@ -131,7 +150,7 @@ The first run of the same pair has `first_check: true` and `changed: false` on e
 
 ## Price
 
-Pay per event, two events. These are the prices in force on the platform, so they are what a run of yours is charged:
+Pay per event, two events. These prices were read from the public Apify Store API (`currentPricingInfo`) on 2026-09-23 16:25 UTC, and they are what a run of yours is charged:
 
 | event | price | when it is charged |
 |---|---|---|
