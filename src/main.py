@@ -135,9 +135,13 @@ def normalize_targets(raw: Any) -> list[dict[str, Any]]:
             url, selector = entry.strip(), None
         elif isinstance(entry, dict):
             url = str(entry.get("url") or "").strip()
-            selector = entry.get("selector") or None
-            if isinstance(selector, str):
-                selector = selector.strip() or None
+            selector = entry.get("selector")
+            if selector is not None and not isinstance(selector, str):
+                # A number or a list typed in the JSON editor. Kept as text so
+                # the row names what the user wrote and the selector error
+                # explains it, instead of a type error further down.
+                selector = str(selector)
+            selector = (selector or "").strip() or None
         else:
             continue
         if not url:
@@ -225,7 +229,31 @@ def fetch_page(
     """Fetch one URL politely. Never raises; returns html, status and error.
 
     Runs in a worker thread: `requests` is synchronous and the delay sleeps.
+
+    "Never raises" is enforced here and not only hoped for: a malformed URL
+    such as `http://[::1` makes urlsplit raise ValueError inside the robots
+    gate, and the transport can raise errors that are not RequestException
+    (UnicodeError from idna, LocationParseError from urllib3). Before 0.1.13
+    any of those escaped to main() and failed the whole run.
     """
+    try:
+        return _fetch_page(session, gate, url, timeout, base_delay)
+    except Exception as exc:  # noqa: BLE001 - one bad URL must not stop a run
+        return {
+            "html": "",
+            "status": None,
+            "error": "could not request this URL (%s: %s)"
+            % (type(exc).__name__, exc),
+        }
+
+
+def _fetch_page(
+    session: requests.Session,
+    gate: RobotsGate,
+    url: str,
+    timeout: int,
+    base_delay: float,
+) -> dict[str, Any]:
     if not gate.allows(url):
         return {
             "html": "",

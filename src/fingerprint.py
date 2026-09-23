@@ -145,29 +145,52 @@ def normalize_attributes(attrs: dict[str, Any]) -> dict[str, str]:
     return normalized
 
 
-def _serialize(node: Any, markup: list[str], text: list[str]) -> None:
-    """Walk the tree, appending the canonical markup and the visible text."""
-    if isinstance(node, (Comment, ProcessingInstruction, Doctype)):
-        return
-    if isinstance(node, NavigableString):
-        piece = collapse_whitespace(str(node))
-        if piece:
-            markup.append(piece)
-            text.append(piece)
-        return
-    if not isinstance(node, Tag):
-        return
-    if (node.name or "").lower() in DROPPED_TAGS:
-        return
+class _Close:
+    """Marker on the walk stack: emit the closing tag of an element."""
 
-    attrs = normalize_attributes(node.attrs)
-    rendered = "".join(
-        ' %s="%s"' % (name, attrs[name]) for name in sorted(attrs)
-    )
-    markup.append("<%s%s>" % ((node.name or "").lower(), rendered))
-    for child in node.children:
-        _serialize(child, markup, text)
-    markup.append("</%s>" % (node.name or "").lower())
+    __slots__ = ("name",)
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+def _serialize(root: Any, markup: list[str], text: list[str]) -> None:
+    """Walk the tree, appending the canonical markup and the visible text.
+
+    Iterative on purpose. The first version recursed once per nesting level,
+    and a real page with a few thousand unclosed tags (old <font> or <div>
+    soup, which html.parser nests instead of closing) went past Python's
+    recursion limit and raised RecursionError, which failed the whole run.
+    The output is byte-for-byte what the recursive walk produced, so stored
+    fingerprints stay valid.
+    """
+    stack: list[Any] = [root]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, _Close):
+            markup.append("</%s>" % node.name)
+            continue
+        if isinstance(node, (Comment, ProcessingInstruction, Doctype)):
+            continue
+        if isinstance(node, NavigableString):
+            piece = collapse_whitespace(str(node))
+            if piece:
+                markup.append(piece)
+                text.append(piece)
+            continue
+        if not isinstance(node, Tag):
+            continue
+        name = (node.name or "").lower()
+        if name in DROPPED_TAGS:
+            continue
+
+        attrs = normalize_attributes(node.attrs)
+        rendered = "".join(
+            ' %s="%s"' % (attr, attrs[attr]) for attr in sorted(attrs)
+        )
+        markup.append("<%s%s>" % (name, rendered))
+        stack.append(_Close(name))
+        stack.extend(reversed(list(node.children)))
 
 
 def excerpt(text: str, limit: int = 200) -> str:
@@ -226,6 +249,11 @@ def fingerprint_html(
     if selector:
         try:
             nodes = soup.select(selector)
+        except RecursionError:
+            result["error"] = (
+                "the page is nested too deeply to apply selector %r" % selector
+            )
+            return result
         except Exception as exc:  # noqa: BLE001 - invalid CSS is user input
             result["error"] = "invalid CSS selector %r: %s" % (selector, exc)
             return result
@@ -239,8 +267,13 @@ def fingerprint_html(
 
     markup: list[str] = []
     text: list[str] = []
-    for node in nodes:
-        _serialize(node, markup, text)
+    try:
+        for node in nodes:
+            _serialize(node, markup, text)
+    except Exception as exc:  # noqa: BLE001 - one bad page must not stop a run
+        result["matches"] = 0
+        result["error"] = "could not read the page structure: %s" % exc
+        return result
 
     canonical = "".join(markup)
     normalized_text = collapse_whitespace(" ".join(text))
